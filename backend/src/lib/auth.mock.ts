@@ -21,14 +21,22 @@ const mockUsers: MockUser[] = []
 // Функция для добавления тестового пользователя при старте
 ;(async () => {
 	// Пароль: "password123"
-	const passwordHash = await bcrypt.hash('password123', 12)
+	let passwordHash = await bcrypt.hash('password123', 12)
 	mockUsers.push({
 		id: 'test-uuid-123',
 		name: 'test',
-		passwordHash: passwordHash,
+		passwordHash,
+		createdAt: new Date().toISOString()
+	})
+	passwordHash = await bcrypt.hash('password123', 12)
+	mockUsers.push({
+		id: 'test-uuid-124',
+		name: 'test1',
+		passwordHash,
 		createdAt: new Date().toISOString()
 	})
 	console.log('Mock DB initialized with one user: test')
+	console.log('Mock DB initialized with one user: test1')
 })()
 
 // --- 2. Функции для работы с данными ---
@@ -45,16 +53,27 @@ export const findUserById = (id: string): MockUser | undefined => {
 export const createUser = async (
 	name: string,
 	password: string
-): Promise<MockUser> => {
+): Promise<Omit<MockUser, 'passwordHash'>> => {
+	// 1. Создание ХЭША
 	const passwordHash: string = await bcrypt.hash(password, 12)
+
+	// 2. Создание нового объекта
 	const newUser: MockUser = {
 		id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
 		name,
-		passwordHash: passwordHash,
+		passwordHash, // Сохраняем ХЭШ
 		createdAt: new Date().toISOString()
 	}
+
+	// 3. ДОБАВЛЕНИЕ В МАССИВ (главный шаг!)
 	mockUsers.push(newUser)
-	return newUser
+
+	// DEBUG: Выводим, чтобы видеть, что пользователь добавлен
+	console.log(`User created: ${newUser.name}, Total users: ${mockUsers.length}`)
+
+	// Возвращаем безопасный объект
+	const { passwordHash: passwordHashed, ...userSafe } = newUser
+	return userSafe
 }
 
 // --- 3. Функции Auth (JWT и Cookie) ---
@@ -75,7 +94,7 @@ export const generateToken = (userId: string): string => {
 
 export const setAuthCookie = (token: string): string => {
 	const maxAge: number = 60 * 60 // 1 час в секундах
-	const secure: boolean = process.env.NODE_ENV === 'production'
+	const secure: boolean = true
 
 	// HttpOnly: Защита от XSS
 	return `token=${token}; Path=/; HttpOnly; Max-Age=${maxAge}; ${secure ? 'Secure' : ''}`

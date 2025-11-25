@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 		{
 			status: 'success',
 			message: 'Это защищенная информация (Моковая система).',
-			data: user
+			user
 		},
 		{ status: 200 }
 	)
