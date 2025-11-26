@@ -7,15 +7,12 @@ import { useEffect } from 'react'
 export function Home() {
 	const { data: user, isLoading, isError, isFetching } = useGetProfileQuery()
 	const router = useRouter()
-
 	useEffect(() => {
-		if (isLoading || isFetching) {
+		if (!isLoading && !user) {
 			router.push('/login')
 		}
-	}, [isLoading, isFetching, router])
+	}, [isLoading, user, router])
+	console.log(user)
 
-	if (isError || !user) {
-		return <div>Вы не авторизованы</div>
-	}
 	return <div>Home</div>
 }

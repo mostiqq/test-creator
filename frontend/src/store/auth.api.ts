@@ -22,7 +22,7 @@ export interface AuthRequest {
 }
 
 const baseQueryWithCredentials = fetchBaseQuery({
-	baseUrl: '/api/',
+	baseUrl: 'http://localhost:3000/api/',
 	credentials: 'include'
 })
 
