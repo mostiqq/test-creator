@@ -12,4 +12,83 @@ model User {
   name      String   @unique
   password  String   // Здесь будет храниться хеш
   createdAt DateTime @default(now())
+  createdTests  Test[]       @relation("UserCreatedTests") // Тесты, которые он СОЗДАЛ
+  testResults   TestResult[] // Тесты, которые он ПРОШЕЛ
+}
+
+enum QuestionType {
+  SINGLE_CHOICE   // Один правильный ответ
+  MULTIPLE_CHOICE // Несколько правильных ответов
+}
+
+model Test {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?  // Описание (необязательно)
+  createdAt   DateTime @default(now())
+
+  // Автор теста
+  authorId    Int
+  author      User     @relation("UserCreatedTests", fields: [authorId], references: [id])
+
+  // Вопросы в тесте
+  questions   Question[]
+
+  // Результаты прохождений этого теста другими людьми
+  results     TestResult[]
+}
+
+model Question {
+  id       Int          @id @default(autoincrement())
+  text     String       // Сам вопрос
+  type     QuestionType @default(SINGLE_CHOICE) // Тип вопроса
+
+  // К какому тесту относится
+  testId   Int
+  test     Test         @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  // Варианты ответов
+  options  Option[]
+  userAnswers UserAnswer[]
+}
+
+model Option {
+  id         Int     @id @default(autoincrement())
+  text       String  // Текст ответа
+  isCorrect  Boolean @default(false) // Правильный ли это ответ?
+
+  // К какому вопросу относится
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedInUserAnswers UserAnswer[] @relation("SelectedOptions")
+}
+
+model TestResult {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  score     Int      // Сколько баллов набрал (или процентов)
+
+  // Кто проходил
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+
+  // Какой тест проходил
+  testId    Int
+  test      Test     @relation(fields: [testId], references: [id])
+  answers   UserAnswer[]
+}
+
+model UserAnswer {
+  id           Int @id @default(autoincrement())
+  
+  // К какой попытке относится
+  testResultId Int
+  testResult   TestResult @relation(fields: [testResultId], references: [id], onDelete: Cascade)
+
+  // На какой вопрос отвечали
+  questionId   Int
+  question     Question   @relation(fields: [questionId], references: [id])
+
+  // Какие варианты выбрал пользователь (Many-to-Many, т.к. может быть multiselect)
+  selectedOptions Option[] @relation("SelectedOptions")
 }
